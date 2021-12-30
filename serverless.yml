@@ -40,3 +40,9 @@ resources:
             KeyType: HASH
           - AttributeName: t
             KeyType: RANGE
+
+    ServerPlayerCountQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${sls:stage}-MCServerPollQueue
+        MessageRetentionPeriod: 86400
