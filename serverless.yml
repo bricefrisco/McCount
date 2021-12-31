@@ -129,13 +129,31 @@ functions:
         Action:
           - dynamodb:Scan
         Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
-  events:
-    - http:
-        path: servers
-        method: get
-        cors:
-          origin: '*'
-          headers: '*'
+    events:
+      - http:
+          path: servers
+          method: get
+          cors:
+            origin: '*'
+            headers: '*'
+
+  deleteServer:
+    handler: src/functions/servers.deleteServer
+    memorySize: 128
+    timeout: 15
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
+    events:
+      - http:
+          path: servers
+          method: delete
+          cors:
+            origin: '*'
+            headers: '*'
 
   pingAndSave:
     handler: src/functions/pinger.pingAndSave
