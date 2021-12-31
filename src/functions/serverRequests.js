@@ -54,7 +54,7 @@ module.exports.createServerRequest = async (event) => {
             host,
             port,
             players,
-            time: Date.now(),
+            time: Math.round(Date.now() / 1000),
             requestedBy: event.headers['X-Forwarded-For'].split(',')[0],
             status: 'Pending'
         })
