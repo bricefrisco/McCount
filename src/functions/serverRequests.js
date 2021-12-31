@@ -4,10 +4,10 @@ const Pinger = require('minecraft-server-ping')
 const RestResponses = require("../util/restResponses")
 const limiter = require("../util/rateLimiter");
 const ServerRequest = require('../util/dynamo').serverRequests()
+const ServerData = require('../util/dynamo').serverData()
 
 const fetchServerRequestsByStatus = (status) => {
     return new Promise((res, rej) => {
-        ServerRequest.get()
         ServerRequest.query(status).usingIndex('status-date-index').exec((err, data) => {
             if (err) {
                 rej(err)
@@ -20,7 +20,7 @@ const fetchServerRequestsByStatus = (status) => {
 
 module.exports.fetchServerRequest = async (event) => {
     try {
-        await limiter.limitPost(3, event)
+        await limiter.limit(3, event)
     } catch (e) {
         return RestResponses.rateLimited()
     }
@@ -36,12 +36,11 @@ module.exports.fetchServerRequest = async (event) => {
     }
 
     try {
-        const serverRequest = ServerRequest.get(name.toUpperCase())
+        const serverRequest = await ServerRequest.get(name.toUpperCase())
         if (serverRequest == null) {
             return RestResponses.notFound();
         }
-
-        return serverRequest;
+        return RestResponses.success(serverRequest);
     } catch (e) {
         console.error(e)
         return RestResponses.internalServerError('Internal server error occurred [6]')
@@ -50,7 +49,7 @@ module.exports.fetchServerRequest = async (event) => {
 
 module.exports.fetchServerRequests = async (event) => {
     try {
-        await limiter.limitPost(3, event)
+        await limiter.limit(3, event)
     } catch (e) {
         return RestResponses.rateLimited()
     }
@@ -71,6 +70,73 @@ module.exports.fetchServerRequests = async (event) => {
         console.error(e)
         return RestResponses.internalServerError('Internal server error occurred [5]')
     }
+}
+
+module.exports.modifyServerRequest = async (event) => {
+    if (!event['body']) {
+        return RestResponses.badRequest('Missing required parameters \'name\', \'status\'')
+    }
+
+    const body = JSON.parse(event['body']);
+    const name = body.name;
+    const status = body.status;
+    const deniedReason = body.deniedReason;
+
+    if (!name) {
+        return RestResponses.badRequest('Missing required parameter \'name\'')
+    }
+
+    if (!status) {
+        return RestResponses.badRequest('Missing required parameter \'status\'')
+    }
+
+    if (!['PENDING', 'APPROVED', 'DENIED'].includes(status.toUpperCase())) {
+        return RestResponses.badRequest('Invalid status. Must be \'PENDING\', \'APPROVED\', or \'DENIED\'')
+    }
+
+    if (status.toUpperCase() === 'DENIED' && !deniedReason) {
+        return RestResponses.badRequest('Missing required parameter \'deniedReason\'')
+    }
+
+    // Validate the server exists
+    let serverRequest
+    try {
+        serverRequest = await ServerRequest.get(name.toUpperCase())
+        if (!serverRequest) {
+            return RestResponses.notFound();
+        }
+    } catch (e) {
+        console.error(e)
+        return RestResponses.internalServerError(e.message)
+    }
+
+    try {
+        if (status.toUpperCase() === 'DENIED') {
+            await ServerRequest.update({name: name.toUpperCase(), status: status.toUpperCase(), deniedReason})
+        } else if (serverRequest.attrs.status === 'DENIED') {
+            await ServerRequest.update({name: name.toUpperCase(), status: status.toUpperCase(), deniedReason: null})
+        } else {
+            await ServerRequest.update({name: name.toUpperCase(), status: status.toUpperCase()})
+        }
+    } catch (e) {
+        console.error(e)
+        return RestResponses.internalServerError(e.message)
+    }
+
+    // If status is 'APPROVED', create the server
+    if (status.toUpperCase() === 'APPROVED') {
+        await ServerData.create({
+            name: serverRequest.attrs.name,
+            time: Math.round(Date.now() / 1000),
+            players: serverRequest.attrs.players,
+            host: serverRequest.attrs.host,
+            port: serverRequest.attrs.port
+        })
+
+        return RestResponses.success({message: 'Successfully added server'})
+    }
+
+    return RestResponses.success({message: 'Successfully updated server request'})
 }
 
 module.exports.createServerRequest = async (event) => {

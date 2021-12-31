@@ -26,7 +26,7 @@ module.exports.fetchTimeSeries = async (event) => {
     }
 
     if (!event['queryStringParameters']) {
-        return RestResponses.badRequest('Missing required parameters: \'serverName\', \'time\', \'backwards\'')
+        return RestResponses.badRequest('Missing required parameters: \'serverName\', \'start\', \'end\'')
     }
 
     const serverName = event['queryStringParameters']['serverName']

@@ -9,6 +9,7 @@ provider:
   environment:
     TIMESERIES_TABLE_NAME: ${sls:stage}-MCServerTimeseries
     SERVER_REQUESTS_TABLE_NAME: ${sls:stage}-MCServerRequests
+    SERVER_DATA_TABLE_NAME: ${sls:stage}-MCServerData
 
 plugins:
   - serverless-iam-roles-per-function
@@ -69,11 +70,35 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerRequests
+        Resource:
+          - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerRequests
+          - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerRequests/index/*
     events:
       - http:
           path: server-requests
           method: get
+          cors:
+            origin: '*'
+            headers: '*'
+
+  modifyServerRequest:
+    handler: src/functions/serverRequests.modifyServerRequest
+    memorySize: 128
+    timeout: 15
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerRequests
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
+    events:
+      - http:
+          path: server-requests
+          method: put
           cors:
             origin: '*'
             headers: '*'
@@ -119,9 +144,20 @@ resources:
         AttributeDefinitions:
           - AttributeName: name
             AttributeType: S
+          - AttributeName: players
+            AttributeType: N
         KeySchema:
           - AttributeName: name
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: player-count-index
+            KeySchema:
+              - AttributeName: name
+                KeyType: HASH
+              - AttributeName: players
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
 
     ServerRequest:
       Type: AWS::DynamoDB::Table
