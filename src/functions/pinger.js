@@ -2,7 +2,7 @@
 const Pinger = require('minecraft-server-ping')
 const TimeSeries = require('../util/dynamo').timeSeries();
 
-module.exports.ping = async (event) => {
+module.exports.pingAndSave = async (event) => {
     for (const record of event['Records']) {
         try {
             const rec = JSON.parse(record['body'])
