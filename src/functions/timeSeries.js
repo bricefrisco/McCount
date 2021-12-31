@@ -3,10 +3,7 @@
 const TimeSeries = require('../util/dynamo').timeSeries();
 const RestResponses = require('../util/restResponses');
 
-const limiter = require('lambda-rate-limiter')({
-    interval: 1000,
-    uniqueTokenPerInterval: 500
-})
+const limiter = require('../util/rateLimiter')
 
 const fetchTimeSeries = (serverName, start, end) => {
     return new Promise((res, rej) => {
@@ -22,14 +19,9 @@ const fetchTimeSeries = (serverName, start, end) => {
 }
 
 module.exports.fetchTimeSeries = async (event) => {
-    const ip = event.headers['X-Forwarded-For'].split(',')[0]
-
-    console.log(`inbound request from ${ip}, params: ${JSON.stringify(event['queryStringParameters'])}`)
-
     try {
-        await limiter.check(3, ip)
+        await limiter.limit(3, event)
     } catch (e) {
-        console.log(`rate limited: ${ip}`)
         return RestResponses.rateLimited()
     }
 
