@@ -65,7 +65,7 @@ module.exports.deleteServer = async (event) => {
         }
 
         const result = await deleteServer(name.toUpperCase())
-        return RestResponses.success(result)
+        return RestResponses.success({message: result})
     } catch (e) {
         console.error(e)
         return RestResponses.internalServerError(e.message)
