@@ -13,8 +13,8 @@ plugins:
   - serverless-iam-roles-per-function
 
 functions:
-  ping:
-    handler: src/functions/pinger.ping
+  pingAndSave:
+    handler: src/functions/pingAndSave.ping
     memorySize: 128
     timeout: 90
     iamRoleStatements:
@@ -58,15 +58,27 @@ resources:
           - AttributeName: name
             KeyType: HASH
 
+    ServerRequest:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${sls:stage}-MCServerRequests
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+
     ServerTimeseries:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${sls:stage}-MCServerTimeseries
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: n # Name
+          - AttributeName: n
             AttributeType: S
-          - AttributeName: t # Timestamp
+          - AttributeName: t
             AttributeType: N
         KeySchema:
           - AttributeName: n
