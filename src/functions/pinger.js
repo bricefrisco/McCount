@@ -3,7 +3,6 @@
 const Pinger = require('minecraft-server-ping')
 const RestResponses = require("../util/restResponses")
 const TimeSeries = require('../util/dynamo').timeSeries()
-
 const limiter = require('../util/rateLimiter')
 
 module.exports.ping = async (event) => {

@@ -2,7 +2,6 @@
 
 const limiter = require("../util/rateLimiter");
 const RestResponses = require("../util/restResponses");
-const {success} = require("../util/restResponses");
 const ServerData = require('../util/dynamo').serverData()
 
 const fetchServers = () => {
@@ -37,7 +36,7 @@ module.exports.fetchServers = async (event) => {
     }
 
     const servers = await fetchServers()
-    return success(servers)
+    return RestResponses.success(servers)
 }
 
 module.exports.deleteServer = async (event) => {
@@ -70,4 +69,8 @@ module.exports.deleteServer = async (event) => {
         console.error(e)
         return RestResponses.internalServerError(e.message)
     }
+}
+
+module.exports.fetchServersInternal = async () => {
+    return fetchServers()
 }
