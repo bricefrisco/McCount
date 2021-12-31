@@ -99,11 +99,22 @@ resources:
             AttributeType: S
           - AttributeName: time
             AttributeType: N
+          - AttributeName: status
+            AttributeType: S
         KeySchema:
           - AttributeName: name
             KeyType: HASH
           - AttributeName: time
             KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: status-date-index
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+              - AttributeName: time
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
 
     ServerTimeseries:
       Type: AWS::DynamoDB::Table
