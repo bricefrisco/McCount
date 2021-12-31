@@ -5,6 +5,13 @@ module.exports.badRequest = (message) => {
     }
 }
 
+module.exports.notFound = () => {
+    return {
+        statusCode: 200,
+        body: JSON.stringify({message: 'Resource not found'})
+    }
+}
+
 module.exports.internalServerError = (message) => {
     return {
         statusCode: 500,

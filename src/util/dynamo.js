@@ -17,7 +17,6 @@ TimeSeries.config({tableName: process.env.TIMESERIES_TABLE_NAME})
 
 const ServerRequests = dynamo.define('server-requests', {
     hashKey: 'name',
-    rangeKey: 'time',
     schema: {
         name: joi.string(),
         host: joi.string(),
@@ -27,7 +26,10 @@ const ServerRequests = dynamo.define('server-requests', {
         requestedBy: joi.string(),
         status: joi.string(),
         deniedReason: joi.string()
-    }
+    },
+    indexes: [{
+        hashKey: 'status', name: 'status-date-index', type: 'global'
+    }]
 })
 
 ServerRequests.config({tableName: process.env.SERVER_REQUESTS_TABLE_NAME})
