@@ -1,6 +1,32 @@
 'use strict';
+
 const Pinger = require('minecraft-server-ping')
+const RestResponses = require("../util/restResponses");
 const TimeSeries = require('../util/dynamo').timeSeries();
+
+const limiter = require('../util/rateLimiter')
+
+module.exports.ping = async (event) => {
+    try {
+        await limiter.limit(1, event)
+    } catch (e) {
+        return RestResponses.rateLimited()
+    }
+
+    if (!event['queryStringParameters'] || !event['queryStringParameters']['host']) {
+        return RestResponses.badRequest('Missing required fields: \'host\'')
+    }
+
+    const host = event['queryStringParameters']['host']
+    const port = event['queryStringParameters']['port'] ? parseInt(event['queryStringParameters']['port']) : 25565
+
+    try {
+        const data = await Pinger.ping(host, port)
+        return RestResponses.success(data)
+    } catch (e) {
+        return RestResponses.internalServerError(e.message)
+    }
+}
 
 module.exports.pingAndSave = async (event) => {
     for (const record of event['Records']) {

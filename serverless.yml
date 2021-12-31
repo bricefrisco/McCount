@@ -13,8 +13,20 @@ plugins:
   - serverless-iam-roles-per-function
 
 functions:
+  ping:
+    handler: src/functions/pinger.ping
+    memorySize: 128
+    timeout: 60
+    events:
+      - http:
+          path: ping
+          method: get
+          cors:
+            origin: '*'
+            headers: '*'
+
   pingAndSave:
-    handler: src/functions/pingAndSave.ping
+    handler: src/functions/pinger.pingAndSave
     memorySize: 128
     timeout: 90
     iamRoleStatements:
@@ -28,7 +40,7 @@ functions:
           arn: arn:aws:sqs:${aws:region}:${aws:accountId}:${sls:stage}-MCServerPollQueue
 
   fetchTimeSeries:
-    handler: src/functions/api.fetchTimeSeries
+    handler: src/functions/timeSeries.fetchTimeSeries
     memorySize: 128
     timeout: 15
     iamRoleStatements:
