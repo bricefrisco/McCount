@@ -10,6 +10,7 @@ provider:
     TIMESERIES_TABLE_NAME: ${sls:stage}-MCServerTimeseries
     SERVER_REQUESTS_TABLE_NAME: ${sls:stage}-MCServerRequests
     SERVER_DATA_TABLE_NAME: ${sls:stage}-MCServerData
+    SQS_QUEUE_URL: https://sqs.${aws:region}.amazonaws.com/${aws:accountId}/${sls:stage}-MCServerPollQueue
 
 plugins:
   - serverless-iam-roles-per-function
@@ -168,6 +169,19 @@ functions:
     events:
       - sqs:
           arn: arn:aws:sqs:${aws:region}:${aws:accountId}:${sls:stage}-MCServerPollQueue
+
+  sqsProducer:
+    handler: src/functions/sqsProducer.loadQueue
+    memorySize: 128
+    timeout: 90
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sqs:SendMessage
+        Resource: arn:aws:sqs:${aws:region}:${aws:accountId}:${sls:stage}-MCServerPollQueue
+    events:
+      - schedule:
+          rate: cron(*/10 * ? * * *)
 
 resources:
   Resources:
