@@ -7,6 +7,7 @@ const ServerRequest = require('../util/dynamo').serverRequests()
 
 const fetchServerRequestsByStatus = (status) => {
     return new Promise((res, rej) => {
+        ServerRequest.get()
         ServerRequest.query(status).usingIndex('status-date-index').exec((err, data) => {
             if (err) {
                 rej(err)
@@ -17,9 +18,39 @@ const fetchServerRequestsByStatus = (status) => {
     })
 }
 
+module.exports.fetchServerRequest = async (event) => {
+    try {
+        await limiter.limitPost(3, event)
+    } catch (e) {
+        return RestResponses.rateLimited()
+    }
+
+    if (!event['queryStringParameters']) {
+        return RestResponses.badRequest('Missing required parameter \'name\'')
+    }
+
+    const name = event['queryStringParameters']['name']
+
+    if (!name) {
+        return RestResponses.badRequest('Missing required parameter \'name\'')
+    }
+
+    try {
+        const serverRequest = ServerRequest.get(name.toUpperCase())
+        if (serverRequest == null) {
+            return RestResponses.notFound();
+        }
+
+        return serverRequest;
+    } catch (e) {
+        console.error(e)
+        return RestResponses.internalServerError('Internal server error occurred [6]')
+    }
+}
+
 module.exports.fetchServerRequests = async (event) => {
     try {
-        await limiter.limitPost(1, event)
+        await limiter.limitPost(3, event)
     } catch (e) {
         return RestResponses.rateLimited()
     }
