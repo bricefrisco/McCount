@@ -35,7 +35,7 @@ module.exports.pingAndSave = async (event) => {
             const data = await Pinger.ping(rec.host, rec.port)
             const timeSeries = new TimeSeries({
                 n: rec.name,
-                t: Date.now(),
+                t: Math.round(Date.now() / 1000),
                 v: data.players.online
             })
             await timeSeries.save();
