@@ -26,7 +26,7 @@ module.exports.fetchTimeSeries = async (event) => {
     }
 
     if (!event['queryStringParameters']) {
-        return RestResponses.badRequest('Missing required fields: \'serverName\', \'time\', \'backwards\'')
+        return RestResponses.badRequest('Missing required parameters: \'serverName\', \'time\', \'backwards\'')
     }
 
     const serverName = event['queryStringParameters']['serverName']
@@ -50,6 +50,6 @@ module.exports.fetchTimeSeries = async (event) => {
         return RestResponses.success(data)
     } catch (e) {
         console.error(e)
-        return RestResponses.internalServerError('Internal server error [2]')
+        return RestResponses.internalServerError('Internal server error occurred [2]')
     }
 }
