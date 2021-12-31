@@ -17,6 +17,7 @@ TimeSeries.config({tableName: process.env.TIMESERIES_TABLE_NAME})
 
 const ServerRequests = dynamo.define('server-requests', {
     hashKey: 'name',
+    rangeKey: 'time',
     schema: {
         name: joi.string(),
         host: joi.string(),
