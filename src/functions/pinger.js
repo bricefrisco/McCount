@@ -3,6 +3,7 @@
 const Pinger = require('minecraft-server-ping')
 const RestResponses = require("../util/restResponses")
 const TimeSeries = require('../util/dynamo').timeSeries()
+const ServerData = require('../util/dynamo').serverData()
 const limiter = require('../util/rateLimiter')
 
 module.exports.ping = async (event) => {
@@ -38,6 +39,7 @@ module.exports.pingAndSave = async (event) => {
                 v: data.players.online
             })
             await timeSeries.save();
+            await ServerData.update({name: rec.name, players: data.players.online})
             console.log('successfully saved ' + JSON.stringify(timeSeries))
         } catch (e) {
             console.error('error occurred while saving ' + record['body'], e)
