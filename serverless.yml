@@ -11,6 +11,7 @@ provider:
     SERVER_REQUESTS_TABLE_NAME: ${sls:stage}-MCServerRequests
     SERVER_DATA_TABLE_NAME: ${sls:stage}-MCServerData
     SQS_QUEUE_URL: https://sqs.${aws:region}.amazonaws.com/${aws:accountId}/${sls:stage}-MCServerPollQueue
+    S3_BUCKET_NAME: ${sls:stage}-minecountserverlogos
 
 plugins:
   - serverless-iam-roles-per-function
@@ -55,6 +56,12 @@ functions:
           - dynamodb:GetItem
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerRequests
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - arn:aws:s3:::${sls:stage}-minecountserverlogos
+          - arn:aws:s3:::${sls:stage}-minecountserverlogos/*
     events:
       - http:
           path: server-requests
