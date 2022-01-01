@@ -5,6 +5,7 @@ const RestResponses = require("../util/restResponses")
 const limiter = require("../util/rateLimiter");
 const ServerRequest = require('../util/dynamo').serverRequests()
 const ServerData = require('../util/dynamo').serverData()
+const S3 = require('../util/s3Uploader')
 
 const fetchServerRequestsByStatus = (status) => {
     return new Promise((res, rej) => {
@@ -199,6 +200,15 @@ module.exports.createServerRequest = async (event) => {
         status: 'PENDING'
     })
 
+    // Upload to S3
+    try {
+        await S3.uploadFile(name.toLowerCase().replace(/ /g, '-') + '.png', data['favicon'])
+    } catch (e) {
+        console.error(e)
+        return RestResponses.internalServerError('Internal server error occurred [7]')
+    }
+
+    // Save server request
     try {
         await serverRequest.save()
     } catch (e) {
