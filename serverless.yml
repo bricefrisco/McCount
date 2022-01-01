@@ -179,6 +179,10 @@ functions:
         Action:
           - sqs:SendMessage
         Resource: arn:aws:sqs:${aws:region}:${aws:accountId}:${sls:stage}-MCServerPollQueue
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+        Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
     events:
       - schedule:
           rate: cron(*/10 * ? * * *)
