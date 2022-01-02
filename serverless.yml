@@ -12,6 +12,9 @@ provider:
     SERVER_DATA_TABLE_NAME: ${sls:stage}-MCServerData
     SQS_QUEUE_URL: https://sqs.${aws:region}.amazonaws.com/${aws:accountId}/${sls:stage}-MCServerPollQueue
     S3_BUCKET_NAME: ${sls:stage}-minecountserverlogos
+    CORS_ALLOWED_ORIGINS: '*'
+    CORS_ALLOWED_HEADERS: '*'
+    CORS_ALLOWED_METHODS: GET, POST, PUT, DELETE, OPTIONS
 
 plugins:
   - serverless-iam-roles-per-function
@@ -25,9 +28,7 @@ functions:
       - http:
           path: ping
           method: get
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   fetchTimeSeries:
     handler: src/functions/timeSeries.fetchTimeSeries
@@ -42,9 +43,7 @@ functions:
       - http:
           path: timeseries
           method: get
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   createServerRequest:
     handler: src/functions/serverRequests.createServerRequest
@@ -66,9 +65,7 @@ functions:
       - http:
           path: server-requests
           method: post
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   fetchServerRequests:
     handler: src/functions/serverRequests.fetchServerRequests
@@ -85,9 +82,7 @@ functions:
       - http:
           path: server-requests
           method: get
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   modifyServerRequest:
     handler: src/functions/serverRequests.modifyServerRequest
@@ -107,9 +102,7 @@ functions:
       - http:
           path: server-requests
           method: put
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   fetchServerRequest:
     handler: src/functions/serverRequests.fetchServerRequest
@@ -124,9 +117,7 @@ functions:
       - http:
           path: server-request
           method: get
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   fetchServers:
     handler: src/functions/servers.fetchServers
@@ -141,9 +132,7 @@ functions:
       - http:
           path: servers
           method: get
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   deleteServer:
     handler: src/functions/servers.deleteServer
@@ -159,9 +148,7 @@ functions:
       - http:
           path: servers
           method: delete
-          cors:
-            origin: '*'
-            headers: '*'
+          cors: true
 
   pingAndSave:
     handler: src/functions/pinger.pingAndSave
