@@ -171,7 +171,7 @@ functions:
   sqsProducer:
     handler: src/functions/sqsProducer.loadQueue
     memorySize: 128
-    timeout: 90
+    timeout: 300
     iamRoleStatements:
       - Effect: Allow
         Action:
