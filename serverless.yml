@@ -55,12 +55,6 @@ functions:
           - dynamodb:GetItem
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerRequests
-      - Effect: Allow
-        Action:
-          - s3:PutObject
-        Resource:
-          - arn:aws:s3:::${sls:stage}-minecountserverlogos
-          - arn:aws:s3:::${sls:stage}-minecountserverlogos/*
     events:
       - http:
           path: server-requests
@@ -98,6 +92,12 @@ functions:
         Action:
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource:
+          - arn:aws:s3:::${sls:stage}-minecountserverlogos
+          - arn:aws:s3:::${sls:stage}-minecountserverlogos/*
     events:
       - http:
           path: server-requests
@@ -210,18 +210,18 @@ resources:
             Projection:
               ProjectionType: ALL
 
-    ServerRequest:
+    ServerRequests:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${sls:stage}-MCServerRequests
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: name
+          - AttributeName: host
             AttributeType: S
           - AttributeName: status
             AttributeType: S
         KeySchema:
-          - AttributeName: name
+          - AttributeName: host
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: status-date-index

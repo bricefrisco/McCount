@@ -27,17 +27,19 @@ module.exports.fetchServerRequest = async (event) => {
     }
 
     if (!event['queryStringParameters']) {
-        return RestResponses.badRequest('Missing required parameter \'name\'')
+        return RestResponses.badRequest('Missing required parameter \'host\'')
     }
 
-    const name = event['queryStringParameters']['name']
+    let host = event['queryStringParameters']['host']
 
-    if (!name) {
-        return RestResponses.badRequest('Missing required parameter \'name\'')
+    if (!host) {
+        return RestResponses.badRequest('Missing required parameter \'host\'')
     }
+
+    host = host.toLowerCase()
 
     try {
-        const serverRequest = await ServerRequest.get(name.toUpperCase())
+        const serverRequest = await ServerRequest.get(host)
         if (serverRequest == null) {
             return RestResponses.notFound();
         }
@@ -75,34 +77,47 @@ module.exports.fetchServerRequests = async (event) => {
 
 module.exports.modifyServerRequest = async (event) => {
     if (!event['body']) {
-        return RestResponses.badRequest('Missing required parameters \'name\', \'status\'')
+        return RestResponses.badRequest('Missing required parameters \'host\', \'name\', \'status\'')
     }
 
     const body = JSON.parse(event['body']);
-    const name = body.name;
-    const status = body.status;
-    const deniedReason = body.deniedReason;
+    let host = body.host
+    let name = body.name
+    let status = body.status
+    const deniedReason = body.deniedReason
 
-    if (!name) {
-        return RestResponses.badRequest('Missing required parameter \'name\'')
+    if (!host) {
+        return RestResponses.badRequest('Missing required parameter \'host\'')
     }
 
     if (!status) {
         return RestResponses.badRequest('Missing required parameter \'status\'')
     }
 
-    if (!['PENDING', 'APPROVED', 'DENIED'].includes(status.toUpperCase())) {
+    status = status.toUpperCase()
+
+    if (!['PENDING', 'APPROVED', 'DENIED'].includes(status)) {
         return RestResponses.badRequest('Invalid status. Must be \'PENDING\', \'APPROVED\', or \'DENIED\'')
+    }
+
+    if (status === 'APPROVED' && !name) {
+        return RestResponses.badRequest('Missing required parameter \'name\'')
+    }
+
+    host = host.toLowerCase()
+
+    if (name) {
+        name = name.toUpperCase()
     }
 
     if (status.toUpperCase() === 'DENIED' && !deniedReason) {
         return RestResponses.badRequest('Missing required parameter \'deniedReason\'')
     }
 
-    // Validate the server exists
+    // Validate the server request exists
     let serverRequest
     try {
-        serverRequest = await ServerRequest.get(name.toUpperCase())
+        serverRequest = await ServerRequest.get(host)
         if (!serverRequest) {
             return RestResponses.notFound();
         }
@@ -113,21 +128,39 @@ module.exports.modifyServerRequest = async (event) => {
 
     try {
         if (status.toUpperCase() === 'DENIED') {
-            await ServerRequest.update({name: name.toUpperCase(), status: status.toUpperCase(), deniedReason})
+            await ServerRequest.update({host, status, deniedReason})
         } else if (serverRequest.attrs.status === 'DENIED') {
-            await ServerRequest.update({name: name.toUpperCase(), status: status.toUpperCase(), deniedReason: null})
+            await ServerRequest.update({host, name, status, deniedReason: null})
         } else {
-            await ServerRequest.update({name: name.toUpperCase(), status: status.toUpperCase()})
+            await ServerRequest.update({host, name, status})
         }
     } catch (e) {
         console.error(e)
         return RestResponses.internalServerError(e.message)
     }
 
-    // If status is 'APPROVED', create the server
+    // If status is 'APPROVED', upload server image to S3 and create the server
     if (status.toUpperCase() === 'APPROVED') {
+
+        // Ping the server
+        let data
+        try {
+            data = await Pinger.ping(serverRequest.attrs.host, serverRequest.attrs.port)
+        } catch (e) {
+            return RestResponses.internalServerError(e.message)
+        }
+
+        // Upload to S3
+        try {
+            await S3.uploadFile(name.toLowerCase() + '.png', data['favicon'])
+        } catch (e) {
+            console.error(e)
+            return RestResponses.internalServerError(e.message)
+        }
+
+        // Save the server
         await ServerData.create({
-            name: serverRequest.attrs.name,
+            name: name,
             time: Math.round(Date.now() / 1000),
             players: serverRequest.attrs.players,
             host: serverRequest.attrs.host,
@@ -148,25 +181,21 @@ module.exports.createServerRequest = async (event) => {
     }
 
     if (!event['body']) {
-        return RestResponses.badRequest('Missing required parameters: \'name\', \'host\'')
+        return RestResponses.badRequest('Missing required parameters: \'host\'')
     }
 
     const body = JSON.parse(event['body'])
 
-    const host = body.host
-    const name = body.name
+    let host = body.host
     const port = body.port ? parseInt(body.port) : 25565
 
     if (!host) {
         return RestResponses.badRequest('Missing required parameters: \'host\'')
     }
 
-    if (!name) {
-        return RestResponses.badRequest('Missing required parameters: \'name\'')
-    }
+    host = host.toLowerCase()
 
     let data
-
     try {
         data = await Pinger.ping(host, port)
     } catch (e) {
@@ -179,11 +208,11 @@ module.exports.createServerRequest = async (event) => {
         return RestResponses.badRequest('Server must have >=10 players online (has ' + players + ')')
     }
 
-    // Server with this name cannot already exist
+    // Server with this host cannot already exist
     try {
-        const maybeServer = await ServerRequest.get(name.toUpperCase())
+        const maybeServer = await ServerRequest.get(host.toLowerCase())
         if (maybeServer != null) {
-            return RestResponses.badRequest('Server or request with this name already exists!')
+            return RestResponses.badRequest('Server or request with this host already exists!')
         }
     } catch (e) {
         console.error(e)
@@ -191,7 +220,6 @@ module.exports.createServerRequest = async (event) => {
     }
 
     const serverRequest = new ServerRequest({
-        name: name.toUpperCase(),
         host,
         port,
         players,
@@ -199,14 +227,6 @@ module.exports.createServerRequest = async (event) => {
         requestedBy: event.headers['X-Forwarded-For'].split(',')[0],
         status: 'PENDING'
     })
-
-    // Upload to S3
-    try {
-        await S3.uploadFile(name.toLowerCase().replace(/ /g, '-') + '.png', data['favicon'])
-    } catch (e) {
-        console.error(e)
-        return RestResponses.internalServerError('Internal server error occurred [7]')
-    }
 
     // Save server request
     try {
