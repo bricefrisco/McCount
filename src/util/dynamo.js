@@ -16,11 +16,11 @@ const TimeSeries = dynamo.define('timeseries', {
 TimeSeries.config({tableName: process.env.TIMESERIES_TABLE_NAME})
 
 // --- ServerRequests --- //
-const ServerRequests = dynamo.define('server-requests', {
-    hashKey: 'name',
+const ServerRequests = dynamo.define('server-requests-2', {
+    hashKey: 'host',
     schema: {
-        name: joi.string(),
         host: joi.string(),
+        name: joi.string(),
         port: joi.number(),
         time: joi.number(),
         players: joi.number(),

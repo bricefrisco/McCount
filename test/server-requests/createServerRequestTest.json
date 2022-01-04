@@ -27,6 +27,6 @@
   "multiValueQueryStringParameters": null,
   "pathParameters": null,
   "stageVariables": null,
-  "body": "{\"name\":\"Complex Gaming\",\"host\":\"hub.mc-complex.com\",\"port\":25565}",
+  "body": "{\"name\":\"Theatria\",\"host\":\"mc.playtheatria.com\",\"port\":25565}",
   "isBase64Encoded": false
 }
