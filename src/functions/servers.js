@@ -74,3 +74,7 @@ module.exports.deleteServer = async (event) => {
 module.exports.fetchServersInternal = async () => {
     return fetchServers()
 }
+
+module.exports.deleteServerInternal = async(name) => {
+    return deleteServer(name);
+}

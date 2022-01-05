@@ -91,6 +91,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
+          - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
       - Effect: Allow
         Action:
