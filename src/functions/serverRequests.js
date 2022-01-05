@@ -6,6 +6,7 @@ const limiter = require("../util/rateLimiter");
 const ServerRequest = require('../util/dynamo').serverRequests()
 const ServerData = require('../util/dynamo').serverData()
 const S3 = require('../util/s3Uploader')
+const Servers = require('../functions/servers')
 
 const fetchServerRequestsByStatus = (status) => {
     return new Promise((res, rej) => {
@@ -128,6 +129,15 @@ module.exports.modifyServerRequest = async (event) => {
 
     try {
         if (status.toUpperCase() === 'DENIED') {
+            // If server exists, remove it
+            if (serverRequest.attrs.name) {
+                try {
+                    await Servers.deleteServerInternal(serverRequest.attrs.name);
+                } catch (e) {
+                    console.error(e)
+                }
+            }
+
             await ServerRequest.update({host, status, deniedReason})
         } else if (serverRequest.attrs.status === 'DENIED') {
             await ServerRequest.update({host, name, status, deniedReason: null})
