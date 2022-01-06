@@ -42,10 +42,13 @@ const ServerData = dynamo.define('server-data', {
         time: joi.number(),
         players: joi.number(),
         host: joi.string(),
-        port: joi.number()
+        port: joi.number(),
+        status: joi.string()
     },
     indexes: [{
         hashKey: 'name', rangeKey: 'players', name: 'player-count-index', type: 'global'
+    }, {
+        hashKey: 'status', rangeKey: 'players', name: 'active-server-player-count', type: 'global'
     }]
 })
 ServerData.config({tableName: process.env.SERVER_DATA_TABLE_NAME})

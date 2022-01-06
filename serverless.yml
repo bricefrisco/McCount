@@ -127,8 +127,10 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - dynamodb:Scan
-        Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
+          - dynamodb:Query
+        Resource:
+          - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData
+          - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${sls:stage}-MCServerData/index/*
     events:
       - http:
           path: servers
@@ -196,15 +198,17 @@ resources:
         AttributeDefinitions:
           - AttributeName: name
             AttributeType: S
+          - AttributeName: status
+            AttributeType: S
           - AttributeName: players
             AttributeType: N
         KeySchema:
           - AttributeName: name
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: player-count-index
+          - IndexName: active-server-player-count
             KeySchema:
-              - AttributeName: name
+              - AttributeName: status
                 KeyType: HASH
               - AttributeName: players
                 KeyType: RANGE
