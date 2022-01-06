@@ -2,7 +2,34 @@
 
 const limiter = require("../util/rateLimiter");
 const RestResponses = require("../util/restResponses");
+const {success} = require("../util/restResponses");
 const ServerData = require('../util/dynamo').serverData()
+
+const fetchServersPaginated = (players) => {
+    return new Promise((res, rej) => {
+        if (!players) {
+            ServerData.query('ACTIVE').usingIndex('active-server-player-count')
+                .where('players').lt(99999999).limit(25)
+                .exec((err, data) => {
+                    if (err) {
+                        rej(err)
+                    } else {
+                        res(data['Items'])
+                    }
+                })
+        } else {
+            ServerData.query('ACTIVE').usingIndex('active-server-player-count')
+                .where('players').lte(parseInt(players)).limit(25)
+                .exec((err, data) => {
+                    if (err) {
+                        rej(err)
+                    } else {
+                        res(data['Items'])
+                    }
+                })
+        }
+    })
+}
 
 const fetchServers = () => {
     return new Promise((res, rej) => {
@@ -30,13 +57,21 @@ const deleteServer = (name) => {
 
 module.exports.fetchServers = async (event) => {
     try {
-        await limiter.limit(2, event)
+        await limiter.limit(3, event);
     } catch (e) {
         return RestResponses.rateLimited()
     }
 
-    const servers = await fetchServers()
-    return RestResponses.success(servers)
+    const players = (event['queryStringParameters'] && event['queryStringParameters']['playersLt'])
+        && event['queryStringParameters']['playersLt']
+
+    try {
+        const data = await fetchServersPaginated(players);
+        return RestResponses.success(data);
+    } catch (e) {
+        console.error(e)
+        return RestResponses.internalServerError('Internal server error occurred [7]')
+    }
 }
 
 module.exports.deleteServer = async (event) => {

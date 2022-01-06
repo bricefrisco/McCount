@@ -174,7 +174,8 @@ module.exports.modifyServerRequest = async (event) => {
             time: Math.round(Date.now() / 1000),
             players: serverRequest.attrs.players,
             host: serverRequest.attrs.host,
-            port: serverRequest.attrs.port
+            port: serverRequest.attrs.port,
+            status: 'ACTIVE'
         })
 
         return RestResponses.success({message: 'Successfully added server'})
