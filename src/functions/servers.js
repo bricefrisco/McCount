@@ -2,14 +2,13 @@
 
 const limiter = require("../util/rateLimiter");
 const RestResponses = require("../util/restResponses");
-const {success} = require("../util/restResponses");
 const ServerData = require('../util/dynamo').serverData()
 
 const fetchServersPaginated = (players) => {
     return new Promise((res, rej) => {
         if (!players) {
             ServerData.query('ACTIVE').usingIndex('active-server-player-count')
-                .where('players').lt(99999999).limit(25)
+                .where('players').lt(99999999).limit(25).descending()
                 .exec((err, data) => {
                     if (err) {
                         rej(err)
@@ -19,7 +18,7 @@ const fetchServersPaginated = (players) => {
                 })
         } else {
             ServerData.query('ACTIVE').usingIndex('active-server-player-count')
-                .where('players').lte(parseInt(players)).limit(25)
+                .where('players').lte(parseInt(players)).limit(25).descending()
                 .exec((err, data) => {
                     if (err) {
                         rej(err)
