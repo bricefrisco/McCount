@@ -8,7 +8,7 @@ const limiter = require('../util/rateLimiter')
 const fetchTimeSeries = (serverName, start, end) => {
     return new Promise((res, rej) => {
         TimeSeries.query(serverName).where('t').between(start, end)
-            .limit(100).exec((err, data) => {
+            .limit(150).exec((err, data) => {
            if (err) {
                rej(err)
            } else {
