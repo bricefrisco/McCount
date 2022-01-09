@@ -29,13 +29,15 @@ module.exports.fetchTimeSeries = async (event) => {
         return RestResponses.badRequest('Missing required parameters: \'serverName\', \'start\', \'end\'')
     }
 
-    const serverName = event['queryStringParameters']['serverName']
+    let serverName = event['queryStringParameters']['serverName']
     const start = event['queryStringParameters']['start']
     const end = event['queryStringParameters']['end']
 
     if (!serverName) {
         return RestResponses.badRequest('Missing required parameter \'serverName\'')
     }
+
+    serverName = serverName.toUpperCase();
 
     if (!start) {
         return RestResponses.badRequest('Missing required parameter \'start\'')
